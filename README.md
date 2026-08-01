@@ -1,57 +1,53 @@
 # 🍚 Pilavcı Temel Reis - WhatsApp Otomatik Mesaj Botu
 
-WhatsApp Business API kullanarak gelen her mesaja otomatik yanıt veren ve **"Menüyü Görüntüle"** butonu gösteren bot.
-
-![WhatsApp Mesaj Örneği](https://i.imgur.com/example.png)
+WhatsApp Business API kullanarak gelen her mesaja otomatik yanıt veren, **"Menüyü Görüntüle"** butonu gösteren ve **telefon numarası güvenliği** sağlayan bot.
 
 ## ✨ Özellikler
 
 - 📱 **Otomatik Yanıt**: Gelen her mesaja anında yanıt
-- 🔘 **Tıklanabilir Buton**: "Menüyü Görüntüle" butonu ile direkt menüye yönlendirme
+- 🔘 **Tıklanabilir Buton**: "Menüyü Görüntüle" butonu
+- 🔐 **Telefon Numarası Güvenliği**: Her kullanıcıya özel şifreli link
 - ⏱️ **Spam Önleme**: Aynı kişiye belirli süre içinde tekrar mesaj göndermez
-- 🆓 **Ücretsiz**: Meta'nın ücretsiz katmanı ile ayda 1000 konuşma ücretsiz
+- 🆓 **Ücretsiz**: Meta'nın ücretsiz katmanı ile ayda 1000 konuşma
 
-## 📋 Gereksinimler
+## 🔐 Telefon Numarası Güvenliği Nasıl Çalışır?
 
-1. **Meta Business Hesabı** (ücretsiz)
-2. **WhatsApp Business API Erişimi** (ücretsiz)
-3. **Node.js 18+**
-4. **Sunucu** (webhook için - ngrok ile test edebilirsiniz)
+```
+1. Müşteri WhatsApp'tan mesaj atar
+          ↓
+2. Bot, telefon numarasını alır
+          ↓
+3. AES-256 şifreleme ile token oluşturur
+          ↓
+4. Kişiye özel link gönderir:
+   menu.com?t=abc123xyz...
+          ↓
+5. Müşteri linke tıklar
+          ↓
+6. Site, token'ı çözer → Telefon numarasını alır
+          ↓
+7. Session'a kaydeder, formu otomatik doldurur
+```
+
+### Faydaları
+
+- ✅ **Sahte sipariş önleme**: Telefon doğrulanmış
+- ✅ **Otomatik form doldurma**: Müşteri numara girmek zorunda değil
+- ✅ **Güvenli iletişim**: Şifreli token, manipüle edilemez
+- ✅ **Zaman sınırlı**: Token 24 saat sonra geçersiz olur
 
 ## 🚀 Kurulum
 
 ### Adım 1: Meta Business API Kurulumu
 
-1. **Meta Business Suite'e gidin**: https://business.facebook.com
-
-2. **Developer hesabı oluşturun**: https://developers.facebook.com
-
-3. **Yeni uygulama oluşturun**:
-   - "Create App" tıklayın
-   - "Business" seçin
-   - Uygulama adı girin
-
-4. **WhatsApp'ı ekleyin**:
-   - Dashboard'da "Add Products" bölümünden "WhatsApp" seçin
-   - "Set up" tıklayın
-
-5. **Test numarası alın**:
-   - WhatsApp > Getting Started
-   - Test numaranızı not edin
-   - **Phone Number ID**'yi kopyalayın
-
-6. **Access Token alın**:
-   - WhatsApp > API Setup
-   - "Generate Access Token" tıklayın
-   - Token'ı kopyalayın
+1. https://developers.facebook.com adresine gidin
+2. Yeni uygulama oluşturun → "Business" seçin
+3. WhatsApp ürününü ekleyin
+4. **Phone Number ID** ve **Access Token** alın
 
 ### Adım 2: Proje Kurulumu
 
 ```bash
-# Depoyu klonlayın
-git clone https://github.com/barisyesilyurtt/baro.git
-cd baro
-
 # Bağımlılıkları yükleyin
 npm install
 
@@ -62,151 +58,179 @@ cp .env.example .env
 ### Adım 3: .env Dosyasını Düzenleyin
 
 ```env
+# WhatsApp API
 WA_PHONE_NUMBER_ID=123456789012345
 WA_ACCESS_TOKEN=EAAxxxxxxxxxx...
-WA_VERIFY_TOKEN=pilavci_temel_reis_verify
+
+# 🔐 ÖNEMLİ: Güçlü bir şifreleme anahtarı belirleyin
+ENCRYPTION_KEY=guclu-rastgele-32-karakterlik-key
+
+# Restoran
 RESTAURANT_NAME=Pilavcı Temel Reis
 MENU_URL=https://uygunye.com/r/pilavci-temel-reis
-KVKK_URL=https://uygunye.com/kvkk
 ```
 
 ### Adım 4: Sunucuyu Başlatın
 
 ```bash
-# Geliştirme için (ngrok ile)
 npm start
-
-# Başka bir terminalde ngrok başlatın
-ngrok http 3000
 ```
 
-### Adım 5: Webhook'u Yapılandırın
+### Adım 5: Webhook Yapılandırın
 
-1. Meta Developer Portal'a gidin
-2. WhatsApp > Configuration
-3. Webhook URL'i girin: `https://YOUR_NGROK_URL/webhook`
-4. Verify Token: `pilavci_temel_reis_verify`
-5. "Verify and Save" tıklayın
-6. "messages" alanını abone yapın (subscribe)
+Meta Developer Portal'da:
+1. WhatsApp > Configuration
+2. Webhook URL: `https://YOUR_DOMAIN/webhook`
+3. Verify Token: `pilavci_temel_reis_verify`
+4. "messages" alanına abone olun
 
 ## 📱 Gönderilen Mesaj
 
-Bot, gelen her mesaja şu şekilde yanıt verir:
+Bot her mesaja şöyle yanıt verir:
 
 ```
 Merhaba! Sizlere en hızlı şekilde destek olmak için buradayız.
 
 Görüşmemiz kapsamında, kişisel verileriniz Aydınlatma Metni ve 
-Gizlilik Politikası'nda (https://uygunye.com/kvkk) belirtilen 
-usul ve esaslara göre işlenmektedir.
+Gizlilik Politikası'nda belirtilen usul ve esaslara göre işlenmektedir.
 
 Menümüzü görüntüleyip, sipariş oluşturmak için aşağıdaki 
 butona tıklayın 👇
 
-[Menüyü Görüntüle] <- Tıklanabilir buton
+[↗ Menüyü Görüntüle]  ← Bu link kişiye özel!
 ```
 
-## ⚙️ Ayarlar
+**Link örneği**: `https://uygunye.com/r/pilavci-temel-reis?t=a1b2c3d4e5...`
+
+## 🔗 Site Entegrasyonu
+
+Sitenizde token'ı çözmek için:
+
+### JavaScript (Frontend)
+
+```javascript
+document.addEventListener('DOMContentLoaded', async () => {
+  const token = new URLSearchParams(window.location.search).get('t');
+  
+  if (token) {
+    const response = await fetch('/api/verify-token?token=' + token);
+    const data = await response.json();
+    
+    if (data.success) {
+      // Telefon numarasını forma yaz
+      document.getElementById('phone').value = data.phone;
+      document.getElementById('phone').readOnly = true;
+      
+      // "WhatsApp ile doğrulandı" rozeti göster
+      showVerifiedBadge();
+    }
+  }
+});
+```
+
+### PHP
+
+```php
+<?php
+$token = $_GET['t'] ?? null;
+
+if ($token) {
+  // Bot API'sine doğrulama isteği
+  $result = file_get_contents(
+    'https://your-bot.com/api/verify-token?token=' . urlencode($token)
+  );
+  $data = json_decode($result, true);
+  
+  if ($data['success']) {
+    $_SESSION['phone'] = $data['phone'];
+    $_SESSION['verified'] = true;
+  }
+}
+?>
+```
+
+Daha fazla örnek için: `src/site-integration-example.js`
+
+## 🔌 API Endpoints
+
+| Endpoint | Açıklama |
+|----------|----------|
+| `GET /webhook` | Meta webhook doğrulama |
+| `POST /webhook` | Gelen WhatsApp mesajları |
+| `GET /api/verify-token?token=xxx` | Token doğrulama |
+| `GET /api/generate-token?phone=xxx` | Test için token oluşturma |
+| `GET /health` | Sağlık kontrolü |
+
+### Token Doğrulama Yanıtı
+
+```json
+{
+  "success": true,
+  "phone": "905551234567",
+  "created": "2024-01-15T10:30:00.000Z",
+  "expiry": "2024-01-16T10:30:00.000Z"
+}
+```
+
+## ⚙️ Yapılandırma
 
 | Değişken | Açıklama | Varsayılan |
 |----------|----------|------------|
-| `WA_PHONE_NUMBER_ID` | WhatsApp telefon numarası ID'si | - |
-| `WA_ACCESS_TOKEN` | Meta API erişim token'ı | - |
-| `WA_VERIFY_TOKEN` | Webhook doğrulama token'ı | pilavci_temel_reis_verify |
-| `RESTAURANT_NAME` | Restoran adı | Pilavcı Temel Reis |
-| `MENU_URL` | Menü linki | https://uygunye.com/r/pilavci-temel-reis |
-| `KVKK_URL` | KVKK metni linki | https://uygunye.com/kvkk |
-| `PORT` | Sunucu portu | 3000 |
-| `COOLDOWN_MS` | Tekrar mesaj bekleme süresi | 3600000 (1 saat) |
+| `WA_PHONE_NUMBER_ID` | WhatsApp telefon ID | - |
+| `WA_ACCESS_TOKEN` | Meta API token | - |
+| `ENCRYPTION_KEY` | Şifreleme anahtarı (32 kar.) | - |
+| `TOKEN_EXPIRY_HOURS` | Token geçerlilik süresi | 24 |
+| `MENU_URL` | Menü linki | - |
+| `COOLDOWN_MS` | Spam önleme süresi | 3600000 |
 
-## 🌐 Üretim Ortamına Dağıtım
+## 🔐 Güvenlik Notları
 
-### Railway.app (Önerilen - Ücretsiz)
+1. **ENCRYPTION_KEY gizli tutulmalı**
+   - .env dosyasında saklayın
+   - Git'e commit etmeyin
+   - Site ve bot'ta AYNI anahtar kullanın
 
-1. [Railway.app](https://railway.app)'e gidin
-2. GitHub ile giriş yapın
-3. "New Project" > "Deploy from GitHub repo"
-4. Bu repoyu seçin
-5. Environment variables ekleyin
-6. Deploy!
+2. **HTTPS zorunlu**
+   - Token URL'de gittiği için HTTPS şart
 
-### Render.com (Ücretsiz)
+3. **Token süresi**
+   - Varsayılan 24 saat
+   - Hassas işlemler için kısaltın
 
-1. [Render.com](https://render.com)'a gidin
-2. "New Web Service" oluşturun
-3. GitHub reposunu bağlayın
-4. Environment variables ekleyin
-5. Deploy!
+## 🌐 Dağıtım
 
-### Heroku
+### Railway.app (Önerilen)
 
 ```bash
-heroku create pilavci-whatsapp-bot
-heroku config:set WA_PHONE_NUMBER_ID=xxx WA_ACCESS_TOKEN=xxx
-git push heroku main
+# Railway CLI ile
+railway login
+railway init
+railway up
 ```
 
-## 💰 Maliyet
+### Render.com
 
-Meta'nın WhatsApp Business API fiyatlandırması:
-
-| Kategori | Ücretsiz | Sonrası |
-|----------|----------|---------|
-| Servis Konuşmaları | Ayda 1000 | ~$0.005/konuşma |
-| Marketing | - | ~$0.05/konuşma |
-
-**Not**: Otomatik yanıtlar "servis konuşması" kategorisindedir ve ayda 1000 adet ücretsizdir.
+1. GitHub reposunu bağlayın
+2. Environment variables ekleyin
+3. Deploy!
 
 ## 📁 Proje Yapısı
 
 ```
 ├── src/
-│   ├── index.js              # Ana sunucu ve webhook işleyici
-│   ├── config.js             # Yapılandırma (opsiyonel)
-│   └── business-api-example.js # API test örneği
-├── .env.example              # Ortam değişkenleri şablonu
-├── .gitignore               # Git ignore kuralları
-├── package.json             # Proje bağımlılıkları
-└── README.md                # Bu dosya
+│   ├── index.js                  # Ana sunucu + şifreleme
+│   └── site-integration-example.js # Site entegrasyon örnekleri
+├── .env.example
+├── .gitignore
+├── package.json
+└── README.md
 ```
 
-## 🔧 Test Etme
+## 💰 Maliyet
 
-### Yerel Test (ngrok)
-
-```bash
-# Terminal 1
-npm start
-
-# Terminal 2
-ngrok http 3000
-```
-
-ngrok'un verdiği URL'yi Meta Developer Portal'daki webhook ayarlarına girin.
-
-### Mesaj Gönderme Testi
-
-WhatsApp'tan test numaranıza mesaj gönderin. Bot otomatik olarak menü butonu ile yanıt verecektir.
-
-## ❓ Sık Sorulan Sorular
-
-### Neden buton görünmüyor?
-- WhatsApp Business API doğru yapılandırılmamış olabilir
-- Access Token süresi dolmuş olabilir
-- Webhook URL'i erişilebilir değil
-
-### Mesajlar gelmiyor?
-- Webhook'un "messages" alanına abone olduğunuzdan emin olun
-- Sunucunun çalıştığını kontrol edin
-- Meta Developer Portal'daki logları kontrol edin
-
-### Ücret ödememek için ne yapmalıyım?
-- Ayda 1000'den fazla mesaj almamaya dikkat edin
-- Sadece gelen mesajlara yanıt verin (marketing mesajı göndermeyin)
-
-## 📞 Destek
-
-Sorularınız için GitHub Issues kullanabilirsiniz.
+| Kategori | Ücretsiz | Sonrası |
+|----------|----------|---------|
+| Servis Konuşmaları | Ayda 1000 | ~$0.005/konuşma |
 
 ## 📄 Lisans
 
