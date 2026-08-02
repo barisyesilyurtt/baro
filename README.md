@@ -1,167 +1,177 @@
 # 🍚 Pilavcı Temel Reis - WhatsApp Otomatik Mesaj Botu
 
-WhatsApp Business API kullanarak gelen her mesaja otomatik yanıt veren, **"Menüyü Görüntüle"** butonu gösteren ve **telefon numarası güvenliği** sağlayan bot.
+**Meta API Yok • Tamamen Ücretsiz • QR Kod ile Bağlan**
+
+Gelen her WhatsApp mesajına otomatik olarak menü linki gönderen bot.
 
 ## ✨ Özellikler
 
-- 📱 **Otomatik Yanıt**: Gelen her mesaja anında yanıt
-- 🔘 **Tıklanabilir Buton**: "Menüyü Görüntüle" butonu
-- 🔐 **Telefon Numarası Güvenliği**: Her kullanıcıya özel şifreli link
-- ⏱️ **Spam Önleme**: Aynı kişiye belirli süre içinde tekrar mesaj göndermez
-- 🆓 **Ücretsiz**: Meta'nın ücretsiz katmanı ile ayda 1000 konuşma
-
-## 🔐 Telefon Numarası Güvenliği Nasıl Çalışır?
-
-```
-1. Müşteri WhatsApp'tan mesaj atar
-          ↓
-2. Bot, telefon numarasını alır
-          ↓
-3. AES-256 şifreleme ile token oluşturur
-          ↓
-4. Kişiye özel link gönderir:
-   menu.com?t=abc123xyz...
-          ↓
-5. Müşteri linke tıklar
-          ↓
-6. Site, token'ı çözer → Telefon numarasını alır
-          ↓
-7. Session'a kaydeder, formu otomatik doldurur
-```
-
-### Faydaları
-
-- ✅ **Sahte sipariş önleme**: Telefon doğrulanmış
-- ✅ **Otomatik form doldurma**: Müşteri numara girmek zorunda değil
-- ✅ **Güvenli iletişim**: Şifreli token, manipüle edilemez
-- ✅ **Zaman sınırlı**: Token 24 saat sonra geçersiz olur
-
-## 🚀 Kurulum
-
-### Adım 1: Meta Business API Kurulumu
-
-1. https://developers.facebook.com adresine gidin
-2. Yeni uygulama oluşturun → "Business" seçin
-3. WhatsApp ürününü ekleyin
-4. **Phone Number ID** ve **Access Token** alın
-
-### Adım 2: Proje Kurulumu
-
-```bash
-# Bağımlılıkları yükleyin
-npm install
-
-# .env dosyası oluşturun
-cp .env.example .env
-```
-
-### Adım 3: .env Dosyasını Düzenleyin
-
-```env
-# WhatsApp API
-WA_PHONE_NUMBER_ID=123456789012345
-WA_ACCESS_TOKEN=EAAxxxxxxxxxx...
-
-# 🔐 ÖNEMLİ: Güçlü bir şifreleme anahtarı belirleyin
-ENCRYPTION_KEY=guclu-rastgele-32-karakterlik-key
-
-# Restoran
-RESTAURANT_NAME=Pilavcı Temel Reis
-MENU_URL=https://uygunye.com/r/pilavci-temel-reis
-```
-
-### Adım 4: Sunucuyu Başlatın
-
-```bash
-npm start
-```
-
-### Adım 5: Webhook Yapılandırın
-
-Meta Developer Portal'da:
-1. WhatsApp > Configuration
-2. Webhook URL: `https://YOUR_DOMAIN/webhook`
-3. Verify Token: `pilavci_temel_reis_verify`
-4. "messages" alanına abone olun
+| Özellik | Açıklama |
+|---------|----------|
+| 🆓 **Tamamen Ücretsiz** | Meta API yok, mesaj limiti yok |
+| 📱 **Kolay Kurulum** | QR kod tarayın, hemen çalışsın |
+| 🔐 **Telefon Güvenliği** | Her müşteriye özel şifreli link |
+| ⏱️ **Spam Önleme** | Aynı kişiye tekrar mesaj göndermez |
+| 🌐 **Web Arayüzü** | QR kodu tarayıcıdan görüntüleyin |
 
 ## 📱 Gönderilen Mesaj
 
 Bot her mesaja şöyle yanıt verir:
 
 ```
-Merhaba! Sizlere en hızlı şekilde destek olmak için buradayız.
+Merhaba! 👋 Sizlere en hızlı şekilde destek olmak için buradayız.
 
 Görüşmemiz kapsamında, kişisel verileriniz Aydınlatma Metni ve 
 Gizlilik Politikası'nda belirtilen usul ve esaslara göre işlenmektedir.
 
-Menümüzü görüntüleyip, sipariş oluşturmak için aşağıdaki 
-butona tıklayın 👇
+Menümüzü görüntüleyip, sipariş oluşturmak için aşağıdaki linke tıklayın 👇
 
-[↗ Menüyü Görüntüle]  ← Bu link kişiye özel!
+━━━━━━━━━━━━━━━━━━━━
+🍽️ MENÜYE GİT
+https://uygunye.com/r/pilavci-temel-reis?t=abc123...
+━━━━━━━━━━━━━━━━━━━━
+
+İyi günler dileriz 🙏
 ```
 
-**Link örneği**: `https://uygunye.com/r/pilavci-temel-reis?t=a1b2c3d4e5...`
+> 🔐 Her müşterinin linki farklı! Telefon numarası şifreli olarak linkte saklanır.
 
-## 🔗 Site Entegrasyonu
+---
 
-Sitenizde token'ı çözmek için:
+## 🚀 Kurulum (5 Dakika)
 
-### JavaScript (Frontend)
+### Gereksinimler
+
+- Node.js 18+ ([nodejs.org](https://nodejs.org))
+- Google Chrome veya Chromium
+- WhatsApp yüklü telefon
+
+### Adım 1: Projeyi İndirin
+
+```bash
+git clone https://github.com/barisyesilyurtt/baro.git
+cd baro
+```
+
+### Adım 2: Bağımlılıkları Yükleyin
+
+```bash
+npm install
+```
+
+### Adım 3: Ayarları Yapın
+
+```bash
+cp .env.example .env
+```
+
+`.env` dosyasını düzenleyin:
+
+```env
+RESTAURANT_NAME=Pilavcı Temel Reis
+MENU_URL=https://uygunye.com/r/pilavci-temel-reis
+KVKK_URL=https://uygunye.com/kvkk
+ENCRYPTION_KEY=kendi-gizli-anahtariniz-32karakter
+COOLDOWN_MS=3600000
+```
+
+### Adım 4: Botu Başlatın
+
+```bash
+npm start
+```
+
+### Adım 5: QR Kodu Tarayın
+
+1. Terminalde veya `http://localhost:3000` adresinde QR kod görünecek
+2. Telefonunuzda **WhatsApp** açın
+3. **Ayarlar** > **Bağlı Cihazlar** > **Cihaz Bağla**
+4. QR kodu tarayın
+5. ✅ Bot aktif!
+
+---
+
+## 🖥️ Ekran Görüntüleri
+
+### Terminal Çıktısı
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  🍚 Pilavcı Temel Reis
+  WhatsApp Otomatik Mesaj Botu v3.0
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✅ Meta API Yok - Tamamen Ücretsiz!
+  ✅ QR Kod ile Bağlan
+  ✅ Telefon Numarası Şifreleme
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+🌐 Web arayüzü: http://localhost:3000
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✅ BOT AKTİF!
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  📱 Numara: 905551234567
+  🏪 Pilavcı Temel Reis
+  🔗 Menü: https://uygunye.com/r/pilavci-temel-reis
+  ⏱️  Cooldown: 60 dakika
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📩 Mesaj alındı: Ahmet (905559876543)
+   "Merhaba, menünüz var mı?"
+✅ Otomatik yanıt gönderildi: Ahmet
+🔗 Özel link oluşturuldu
+```
+
+---
+
+## 🔐 Telefon Numarası Güvenliği
+
+Her müşteriye özel link nasıl çalışır:
+
+```
+1. Müşteri mesaj atar
+         ↓
+2. Bot telefon numarasını alır: 905551234567
+         ↓
+3. AES-256 ile şifreler: abc123xyz...
+         ↓
+4. Özel link oluşturur:
+   menu.com?t=abc123xyz...
+         ↓
+5. Siteniz token'ı çözer → Telefon numarasını alır
+```
+
+### Sitenizde Token'ı Çözmek
 
 ```javascript
-document.addEventListener('DOMContentLoaded', async () => {
-  const token = new URLSearchParams(window.location.search).get('t');
-  
-  if (token) {
-    const response = await fetch('/api/verify-token?token=' + token);
-    const data = await response.json();
-    
-    if (data.success) {
-      // Telefon numarasını forma yaz
-      document.getElementById('phone').value = data.phone;
-      document.getElementById('phone').readOnly = true;
-      
-      // "WhatsApp ile doğrulandı" rozeti göster
-      showVerifiedBadge();
-    }
-  }
-});
-```
+// Sayfa yüklendiğinde
+const token = new URLSearchParams(window.location.search).get('t');
 
-### PHP
-
-```php
-<?php
-$token = $_GET['t'] ?? null;
-
-if ($token) {
-  // Bot API'sine doğrulama isteği
-  $result = file_get_contents(
-    'https://your-bot.com/api/verify-token?token=' . urlencode($token)
-  );
-  $data = json_decode($result, true);
-  
-  if ($data['success']) {
-    $_SESSION['phone'] = $data['phone'];
-    $_SESSION['verified'] = true;
-  }
+if (token) {
+  fetch('https://YOUR_BOT_SERVER/api/verify-token?token=' + token)
+    .then(res => res.json())
+    .then(data => {
+      if (data.success) {
+        console.log('Telefon:', data.phone); // 905551234567
+        // Forma otomatik doldur, session'a kaydet, vs.
+      }
+    });
 }
-?>
 ```
 
-Daha fazla örnek için: `src/site-integration-example.js`
+---
 
 ## 🔌 API Endpoints
 
 | Endpoint | Açıklama |
 |----------|----------|
-| `GET /webhook` | Meta webhook doğrulama |
-| `POST /webhook` | Gelen WhatsApp mesajları |
+| `GET /` | Web arayüzü (QR kod gösterimi) |
+| `GET /api/status` | Bot durumu |
 | `GET /api/verify-token?token=xxx` | Token doğrulama |
 | `GET /api/generate-token?phone=xxx` | Test için token oluşturma |
 | `GET /health` | Sağlık kontrolü |
 
-### Token Doğrulama Yanıtı
+### Örnek: Token Doğrulama Yanıtı
 
 ```json
 {
@@ -172,66 +182,121 @@ Daha fazla örnek için: `src/site-integration-example.js`
 }
 ```
 
-## ⚙️ Yapılandırma
+---
+
+## ⚙️ Ayarlar
 
 | Değişken | Açıklama | Varsayılan |
 |----------|----------|------------|
-| `WA_PHONE_NUMBER_ID` | WhatsApp telefon ID | - |
-| `WA_ACCESS_TOKEN` | Meta API token | - |
+| `RESTAURANT_NAME` | Restoran adı | Pilavcı Temel Reis |
+| `MENU_URL` | Menü linki | - |
+| `KVKK_URL` | KVKK metni linki | - |
 | `ENCRYPTION_KEY` | Şifreleme anahtarı (32 kar.) | - |
 | `TOKEN_EXPIRY_HOURS` | Token geçerlilik süresi | 24 |
-| `MENU_URL` | Menü linki | - |
-| `COOLDOWN_MS` | Spam önleme süresi | 3600000 |
+| `COOLDOWN_MS` | Aynı kişiye tekrar mesaj süresi | 3600000 (1 saat) |
+| `REPLY_TO_GROUPS` | Gruplara yanıt ver | false |
+| `PORT` | Web arayüzü portu | 3000 |
 
-## 🔐 Güvenlik Notları
+---
 
-1. **ENCRYPTION_KEY gizli tutulmalı**
-   - .env dosyasında saklayın
-   - Git'e commit etmeyin
-   - Site ve bot'ta AYNI anahtar kullanın
+## 🌐 7/24 Çalıştırma
 
-2. **HTTPS zorunlu**
-   - Token URL'de gittiği için HTTPS şart
+Bot'un sürekli çalışması için birkaç seçenek:
 
-3. **Token süresi**
-   - Varsayılan 24 saat
-   - Hassas işlemler için kısaltın
-
-## 🌐 Dağıtım
-
-### Railway.app (Önerilen)
+### Seçenek 1: PM2 (Linux/Mac)
 
 ```bash
-# Railway CLI ile
-railway login
-railway init
-railway up
+# PM2 yükle
+npm install -g pm2
+
+# Botu başlat
+pm2 start src/index.js --name "whatsapp-bot"
+
+# Bilgisayar yeniden başladığında otomatik çalışsın
+pm2 startup
+pm2 save
 ```
 
-### Render.com
+### Seçenek 2: VPS/Sunucu
 
-1. GitHub reposunu bağlayın
-2. Environment variables ekleyin
-3. Deploy!
+DigitalOcean, Hetzner, Contabo gibi ucuz VPS'lerde çalıştırabilirsiniz.
+
+```bash
+# Sunucuya bağlan
+ssh user@sunucu-ip
+
+# Projeyi kur
+git clone https://github.com/barisyesilyurtt/baro.git
+cd baro
+npm install
+cp .env.example .env
+nano .env  # Ayarları düzenle
+
+# PM2 ile başlat
+pm2 start src/index.js --name "whatsapp-bot"
+```
+
+### Seçenek 3: Kendi Bilgisayarınız
+
+Bilgisayarınız açık kaldığı sürece bot çalışır.
+
+---
+
+## ❓ Sık Sorulan Sorular
+
+### QR kod sürekli yenileniyor?
+Normal davranış. 60 saniye içinde taramazsanız yenilenir.
+
+### "session-xxxxx" klasörü ne?
+WhatsApp oturum bilgileri. Silmeyin, yoksa tekrar QR taramanız gerekir.
+
+### Telefon internetsiz kalırsa?
+Bot çalışmaya devam eder. WhatsApp Web gibi çalışır.
+
+### Birden fazla numara kullanabilir miyim?
+Her numara için ayrı bot çalıştırmanız gerekir (farklı portlarda).
+
+### Grup mesajlarına yanıt vermek istiyorum?
+`.env` dosyasında `REPLY_TO_GROUPS=true` yapın.
+
+---
+
+## 🆚 Meta API vs Bu Çözüm
+
+| Özellik | Meta API | Bu Çözüm |
+|---------|----------|----------|
+| Maliyet | 1000 sonrası ücretli | ✅ Tamamen ücretsiz |
+| Kurulum | Karmaşık, doğrulama gerekli | ✅ 5 dakika, QR tara |
+| Buton | ✅ Gerçek buton | Link (tıklanabilir) |
+| Güvenilirlik | ✅ Resmi API | Gayri resmi |
+| Hesap riski | Yok | Düşük* |
+
+> *Normal kullanımda risk yok. Spam yaparsanız hesap askıya alınabilir.
+
+---
 
 ## 📁 Proje Yapısı
 
 ```
 ├── src/
-│   ├── index.js                  # Ana sunucu + şifreleme
+│   ├── index.js                  # Ana bot dosyası
 │   └── site-integration-example.js # Site entegrasyon örnekleri
-├── .env.example
+├── .wwebjs_auth/                 # WhatsApp oturum verileri (otomatik)
+├── .env.example                  # Ortam değişkenleri şablonu
+├── .env                          # Ayarlarınız (oluşturmanız gerekir)
 ├── .gitignore
 ├── package.json
 └── README.md
 ```
 
-## 💰 Maliyet
-
-| Kategori | Ücretsiz | Sonrası |
-|----------|----------|---------|
-| Servis Konuşmaları | Ayda 1000 | ~$0.005/konuşma |
+---
 
 ## 📄 Lisans
 
 MIT
+
+---
+
+## 🆘 Destek
+
+Sorun mu yaşıyorsunuz? GitHub Issues açın!
