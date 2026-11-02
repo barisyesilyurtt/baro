@@ -2,72 +2,42 @@
 <html lang="tr">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no" />
     <title>ÇAKBOT</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect fill='%23f0d33a' width='64' height='64'/%3E%3Crect fill='%2316180f' x='10' y='28' width='44' height='8'/%3E%3C/svg%3E" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <div id="app">
-      <section id="title-screen" class="screen">
-        <p class="kit-tag">hurda atölyesi · 4 komut</p>
-        <h1>ÇAK<span>BOT</span></h1>
-        <p class="pitch">
-          Robotu sen kodluyorsun. Yürür, döner, yumruğunu indirir.
-          Amaç saçma: tostu, yazıcıyı, kahve makinesini <b>ÇAK</b>.
-        </p>
-        <ol class="how">
-          <li>Alttaki bloklardan program diz</li>
-          <li>Çalıştır</li>
-          <li>Hedefin önünde <b>ÇAK</b> basılmış olsun</li>
-        </ol>
-        <button id="start-btn" type="button">İşe başla</button>
-        <p class="hint-foot">Klavye: 1 ileri · 2 sol · 3 sağ · 4 çak · Enter çalıştır · Backspace sil</p>
-      </section>
-
-      <section id="game-screen" class="screen hidden">
-        <header class="top">
-          <div>
-            <p class="kit-tag" id="level-tag">seviye 1 / 6</p>
-            <h2 id="level-title">Tost hakkı</h2>
-          </div>
-          <div class="top-actions">
-            <button id="reset-level" type="button" class="ghost">Sıfırla</button>
-            <button id="back-title" type="button" class="ghost">Çık</button>
-          </div>
-        </header>
-
-        <p id="brief" class="brief"></p>
-
-        <div id="stage">
-          <div id="board" aria-label="Atölye ızgarası"></div>
-          <div id="stamp" class="hidden">ÇAK</div>
+      <header class="hud">
+        <div>
+          <p class="kit-tag">hurda pistonu</p>
+          <h1>ÇAK<span>BOT</span></h1>
         </div>
-
-        <p id="status" class="status" role="status">Programı diz, sonra çalıştır.</p>
-
-        <div class="rail-wrap">
-          <p class="rail-label">program bandı</p>
-          <div id="rail" class="rail"></div>
+        <div class="meters">
+          <p>skor <b id="score">0</b></p>
+          <p>seri <b id="combo">0</b></p>
+          <p>can <b id="lives">■■■</b></p>
         </div>
+      </header>
 
-        <div class="palette" id="palette"></div>
-
-        <div class="run-row">
-          <button id="run-btn" type="button">Çalıştır</button>
-          <button id="undo-btn" type="button" class="ghost">Son komutu sil</button>
-          <button id="clear-btn" type="button" class="ghost">Bandı boşalt</button>
+      <div id="stage">
+        <canvas id="view" width="960" height="540"></canvas>
+        <div id="stamp" class="hidden">ÇAK</div>
+        <div id="overlay" class="overlay">
+          <p class="kit-tag">tek tuş · üç şerit</p>
+          <h2>Gelen her şeyi ÇAK.</h2>
+          <p class="pitch">Tost, yazıcı, kahve, kedi. Zamanla vur. Kaçırınca yüzüne yapışır.</p>
+          <button id="start-btn" type="button">Çakmaya başla</button>
+          <p class="hint">W/S veya ▲▼ şerit · Boşluk / tık / buton = ÇAK</p>
         </div>
+      </div>
 
-        <pre id="code" class="code" aria-label="Üretilen robot kodu"></pre>
-      </section>
-
-      <section id="win-screen" class="screen hidden">
-        <p class="kit-tag">atölye kapandı</p>
-        <h1>HURDA<br />ŞAMPİYONU</h1>
-        <p class="pitch">Altı hedef çöktü. Piston hâlâ ılık. İstersen baştan çak.</p>
-        <button id="again-btn" type="button">Bir tur daha</button>
-      </section>
+      <div class="controls">
+        <button id="up-btn" type="button" class="ghost">▲</button>
+        <button id="cak-btn" type="button">ÇAK</button>
+        <button id="down-btn" type="button" class="ghost">▼</button>
+      </div>
     </div>
     <script src="game.js"></script>
   </body>

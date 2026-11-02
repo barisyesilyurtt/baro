@@ -1,387 +1,334 @@
-/* ÇAKBOT
- * Kendin büyütmek için:
- * 1) LEVELS dizisine oda ekle (robot, hedef, duvar).
- * 2) Yeni hareket için COMMANDS içine bir fonksiyon yaz.
- * 3) index.html / palette otomatik gelir, komut adı COMMANDS anahtarıdır.
+/* ÇAKBOT — gelen hurdayı tek vuruşta parçala.
+ * Yeni eşya için JUNK dizisine bir satır ekle.
+ * Zorluk: BASE_SPEED ve SPAWN_MS.
  */
 
-const COLS = 7;
-const ROWS = 5;
-const MAX_STEPS = 12;
-
-const LEVELS = [
-  {
-    title: "Tost hakkı",
-    brief: "Düz git, pistonu indir. Tostun suçu: var olmak.",
-    robot: { x: 1, y: 2, dir: 0 },
-    target: { x: 4, y: 2, kind: "toast", label: "TOST" },
-    walls: [],
-  },
-  {
-    title: "Sıkışan yazıcı",
-    brief: "Yazıcı köşede. Dönmeyi unutursan kâğıda çakarsın.",
-    robot: { x: 1, y: 3, dir: 0 },
-    target: { x: 4, y: 1, kind: "printer", label: "YAZICI" },
-    walls: [],
-  },
-  {
-    title: "Koli labirenti",
-    brief: "Ortadaki koli düz yolu kesiyor. Etrafından dolaş, sonra çak.",
-    robot: { x: 0, y: 2, dir: 0 },
-    target: { x: 5, y: 2, kind: "plant", label: "BİTKİ" },
-    walls: [{ x: 2, y: 2 }],
-  },
-  {
-    title: "Kahve nöbeti",
-    brief: "Makine sol üstte. Uzun yol, kısa bellek. Bandı taşırma.",
-    robot: { x: 6, y: 4, dir: 2 },
-    target: { x: 1, y: 0, kind: "coffee", label: "KAHVE" },
-    walls: [
-      { x: 3, y: 1 },
-      { x: 3, y: 2 },
-      { x: 3, y: 3 },
-    ],
-  },
-  {
-    title: "Mikrodalga davası",
-    brief: "Alt sıra kapalı. Yukarı çık, sağa yürü, çak.",
-    robot: { x: 0, y: 4, dir: 0 },
-    target: { x: 6, y: 0, kind: "micro", label: "MIKRO" },
-    walls: [
-      { x: 1, y: 4 },
-      { x: 2, y: 4 },
-      { x: 3, y: 4 },
-      { x: 4, y: 4 },
-      { x: 5, y: 4 },
-      { x: 1, y: 2 },
-      { x: 2, y: 2 },
-      { x: 3, y: 2 },
-      { x: 4, y: 2 },
-    ],
-  },
-  {
-    title: "Fotokopi canavarı",
-    brief: "Son iş. Delikten geç, tam önünde dur, sonra çak.",
-    robot: { x: 0, y: 2, dir: 0 },
-    target: { x: 6, y: 2, kind: "copier", label: "KOPYA" },
-    walls: [
-      { x: 2, y: 2 },
-      { x: 2, y: 3 },
-      { x: 4, y: 0 },
-      { x: 4, y: 1 },
-      { x: 4, y: 3 },
-      { x: 4, y: 4 },
-    ],
-  },
+const JUNK = [
+  { id: "toast", label: "TOST", color: "#d9a45a", score: 20 },
+  { id: "printer", label: "YAZICI", color: "#8ea0b3", score: 30 },
+  { id: "coffee", label: "KAHVE", color: "#8b5a3c", score: 25 },
+  { id: "cat", label: "KEDİ", color: "#c9a36a", score: 40 },
+  { id: "micro", label: "MIKRO", color: "#c9c3b2", score: 35 },
+  { id: "copier", label: "KOPYA", color: "#6e7d8b", score: 50 },
 ];
 
-const DIRS = [
-  { x: 1, y: 0 },
-  { x: 0, y: 1 },
-  { x: -1, y: 0 },
-  { x: 0, y: -1 },
-];
+const LANES = 3;
+const BASE_SPEED = 220;
+const SPAWN_MS = 1100;
+const PUNCH_MS = 160;
+const RECOVER_MS = 140;
+const COMBO_MS = 1200;
 
-const COMMANDS = {
-  ileri: {
-    label: "İleri",
-    code: "cakbot.ileri()",
-    run(state) {
-      const d = DIRS[state.robot.dir];
-      const nx = state.robot.x + d.x;
-      const ny = state.robot.y + d.y;
-      if (!inside(nx, ny)) return fail(state, "Atölyeden düştü. Hurda artık bahçede.");
-      if (isWall(state, nx, ny)) return fail(state, "Koli kazandı. Robotun burnu ezildi.");
-      if (isTarget(state, nx, ny)) return fail(state, "Hedefe bindin. ÇAK yok, sadece utanç var.");
-      state.robot.x = nx;
-      state.robot.y = ny;
-      tone(180, 0.05, "square");
-      return "ok";
-    },
-  },
-  sol: {
-    label: "Sol",
-    code: "cakbot.sol()",
-    run(state) {
-      state.robot.dir = (state.robot.dir + 3) % 4;
-      tone(140, 0.08, "sawtooth");
-      return "ok";
-    },
-  },
-  sag: {
-    label: "Sağ",
-    code: "cakbot.sag()",
-    run(state) {
-      state.robot.dir = (state.robot.dir + 1) % 4;
-      tone(160, 0.08, "sawtooth");
-      return "ok";
-    },
-  },
-  cak: {
-    label: "Çak",
-    code: "cakbot.cak()",
-    run(state) {
-      const d = DIRS[state.robot.dir];
-      const tx = state.robot.x + d.x;
-      const ty = state.robot.y + d.y;
-      thud();
-      stamp();
-      if (isTarget(state, tx, ty)) {
-        state.smashed = true;
-        return "win";
-      }
-      return fail(state, "Havaya çaktın. Piston boşta kaldı, robot utandı.");
-    },
-  },
+const canvas = document.getElementById("view");
+const ctx = canvas.getContext("2d");
+const overlay = document.getElementById("overlay");
+const stamp = document.getElementById("stamp");
+const cakBtn = document.getElementById("cak-btn");
+
+const hud = {
+  score: document.getElementById("score"),
+  combo: document.getElementById("combo"),
+  lives: document.getElementById("lives"),
 };
 
-const ui = {
-  title: document.getElementById("title-screen"),
-  game: document.getElementById("game-screen"),
-  win: document.getElementById("win-screen"),
-  board: document.getElementById("board"),
-  rail: document.getElementById("rail"),
-  palette: document.getElementById("palette"),
-  status: document.getElementById("status"),
-  code: document.getElementById("code"),
-  brief: document.getElementById("brief"),
-  levelTag: document.getElementById("level-tag"),
-  levelTitle: document.getElementById("level-title"),
-  stamp: document.getElementById("stamp"),
-  run: document.getElementById("run-btn"),
+const state = {
+  mode: "title",
+  lane: 1,
+  punchUntil: 0,
+  recoverUntil: 0,
+  score: 0,
+  combo: 0,
+  comboUntil: 0,
+  lives: 3,
+  items: [],
+  bits: [],
+  pops: [],
+  shake: 0,
+  flash: 0,
+  nextSpawn: 0,
+  elapsed: 0,
+  last: 0,
 };
 
-let levelIndex = 0;
-let program = [];
-let running = false;
 let audio;
 
-function boot() {
-  ui.board.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
-  ui.palette.innerHTML = "";
-  Object.keys(COMMANDS).forEach((name) => {
-    const btn = document.createElement("button");
-    btn.type = "button";
-    btn.className = `chip ${name}`;
-    btn.textContent = COMMANDS[name].label;
-    btn.addEventListener("click", () => addStep(name));
-    ui.palette.appendChild(btn);
-  });
-
-  document.getElementById("start-btn").addEventListener("click", () => {
-    unlockAudio();
-    levelIndex = 0;
-    show("game");
-    loadLevel();
-  });
-  document.getElementById("again-btn").addEventListener("click", () => {
-    levelIndex = 0;
-    show("game");
-    loadLevel();
-  });
-  document.getElementById("reset-level").addEventListener("click", () => {
-    if (!running) loadLevel(false);
-  });
-  document.getElementById("back-title").addEventListener("click", () => {
-    if (!running) show("title");
-  });
-  ui.run.addEventListener("click", runProgram);
-  document.getElementById("undo-btn").addEventListener("click", () => {
-    if (running) return;
-    program.pop();
-    renderRail();
-  });
-  document.getElementById("clear-btn").addEventListener("click", () => {
-    if (running) return;
-    program = [];
-    renderRail();
-  });
-
-  document.addEventListener("keydown", (event) => {
-    if (ui.game.classList.contains("hidden") || running) return;
-    const keys = { "1": "ileri", "2": "sol", "3": "sag", "4": "cak" };
-    if (keys[event.key]) addStep(keys[event.key]);
-    if (event.key === "Enter") runProgram();
-    if (event.key === "Backspace") {
-      event.preventDefault();
-      program.pop();
-      renderRail();
-    }
-  });
+function laneY(lane) {
+  return 130 + lane * 130;
 }
 
-function show(name) {
-  ui.title.classList.toggle("hidden", name !== "title");
-  ui.game.classList.toggle("hidden", name !== "game");
-  ui.win.classList.toggle("hidden", name !== "win");
+function start() {
+  unlockAudio();
+  state.mode = "play";
+  state.lane = 1;
+  state.punchUntil = 0;
+  state.recoverUntil = 0;
+  state.score = 0;
+  state.combo = 0;
+  state.comboUntil = 0;
+  state.lives = 3;
+  state.items = [];
+  state.bits = [];
+  state.pops = [];
+  state.shake = 0;
+  state.flash = 0;
+  state.nextSpawn = 400;
+  state.elapsed = 0;
+  overlay.classList.add("hidden");
+  paintHud();
 }
 
-function loadLevel(resetProgram = true) {
-  const level = LEVELS[levelIndex];
-  ui.levelTag.textContent = `seviye ${levelIndex + 1} / ${LEVELS.length}`;
-  ui.levelTitle.textContent = level.title;
-  ui.brief.textContent = level.brief;
-  if (resetProgram) program = [];
-  running = false;
-  ui.run.disabled = false;
-  setStatus("Programı diz, sonra çalıştır.");
-  renderRail();
-  draw(freshState());
+function gameOver() {
+  state.mode = "dead";
+  overlay.classList.remove("hidden");
+  overlay.innerHTML = `
+    <p class="kit-tag">piston durdu</p>
+    <h2>YÜZÜNE YAPIŞTI</h2>
+    <p class="pitch">Skor ${state.score}. Seri bitti. Atölye dağınık.</p>
+    <button id="again-btn" type="button">Bir daha çak</button>
+  `;
+  document.getElementById("again-btn").addEventListener("click", start);
 }
 
-function freshState() {
-  const level = LEVELS[levelIndex];
-  return {
-    robot: { ...level.robot },
-    target: { ...level.target },
-    walls: level.walls,
-    smashed: false,
-    over: false,
-    message: "",
-  };
-}
-
-function addStep(name) {
-  if (running) return;
-  if (program.length >= MAX_STEPS) {
-    setStatus(`Bant doldu. En fazla ${MAX_STEPS} komut.`, "bad");
+function punch() {
+  if (state.mode !== "play") {
+    start();
     return;
   }
-  program.push(name);
-  renderRail();
+  const now = state.elapsed;
+  if (now < state.recoverUntil) return;
+  state.punchUntil = now + PUNCH_MS;
+  state.recoverUntil = state.punchUntil + RECOVER_MS;
+  cakBtn.classList.add("hot");
+  setTimeout(() => cakBtn.classList.remove("hot"), 120);
+  thud(90, 0.12);
+  let hit = false;
+  for (const item of state.items) {
+    if (item.dead || item.lane !== state.lane) continue;
+    if (item.x < 360 && item.x > 130) {
+      smash(item);
+      hit = true;
+    }
+  }
+  if (!hit) {
+    flashStamp();
+    tone(70, 0.08, "sawtooth");
+  }
 }
 
-function renderRail() {
-  ui.rail.innerHTML = "";
-  program.forEach((name, i) => {
-    const el = document.createElement("span");
-    el.className = `step ${name}`;
-    el.textContent = `${i + 1}.${COMMANDS[name].label}`;
-    ui.rail.appendChild(el);
+function smash(item) {
+  item.dead = true;
+  const now = state.elapsed;
+  if (now < state.comboUntil) state.combo += 1;
+  else state.combo = 1;
+  state.comboUntil = now + COMBO_MS;
+  const gained = item.kind.score * state.combo;
+  state.score += gained;
+  state.shake = 10;
+  state.flash = 0.35;
+  burst(item);
+  pop(item.x, item.y, `+${gained}`);
+  flashStamp();
+  crunch();
+  paintHud();
+}
+
+function hurt(item) {
+  item.dead = true;
+  state.lives -= 1;
+  state.combo = 0;
+  state.shake = 16;
+  state.flash = 0.55;
+  burst(item);
+  pop(120, item.y, "AU");
+  tone(50, 0.2, "square");
+  paintHud();
+  if (state.lives <= 0) gameOver();
+}
+
+function burst(item) {
+  for (let i = 0; i < 16; i += 1) {
+    state.bits.push({
+      x: item.x + 30,
+      y: item.y,
+      w: 12 + Math.random() * 22,
+      h: 10 + Math.random() * 18,
+      vx: 40 + Math.random() * 520,
+      vy: -380 + Math.random() * 420,
+      rot: Math.random() * 6,
+      vr: -12 + Math.random() * 24,
+      color: item.kind.color,
+      life: 0.85 + Math.random() * 0.5,
+    });
+  }
+}
+
+function pop(x, y, text) {
+  state.pops.push({ x, y, text, life: 0.7 });
+}
+
+function spawn() {
+  const kind = JUNK[(Math.random() * JUNK.length) | 0];
+  state.items.push({
+    kind,
+    lane: (Math.random() * LANES) | 0,
+    x: 980,
+    y: 0,
+    dead: false,
   });
-  ui.code.textContent = program.length
-    ? program.map((name) => COMMANDS[name].code).join("\n")
-    : "// henüz komut yok\n// cakbot.ileri()";
 }
 
-async function runProgram() {
-  if (running) return;
-  if (!program.length) {
-    setStatus("Boş bant. Robot kıpırdamaz, sadece seni yargılar.", "bad");
-    return;
+function step(dt) {
+  if (state.mode !== "play") return;
+  state.elapsed += dt * 1000;
+  const t = state.elapsed / 1000;
+  const speed = BASE_SPEED + t * 18;
+  const spawnEvery = Math.max(420, SPAWN_MS - t * 28);
+
+  if (state.elapsed >= state.nextSpawn) {
+    spawn();
+    state.nextSpawn = state.elapsed + spawnEvery;
   }
-  running = true;
-  ui.run.disabled = true;
-  const state = freshState();
-  draw(state);
-  for (const name of program) {
-    const result = COMMANDS[name].run(state);
-    draw(state);
-    if (name === "cak") {
-      const robotEl = document.querySelector(".robot");
-      if (robotEl) robotEl.classList.add("punch");
-    }
-    if (result === "win") {
-      setStatus(winLine(state.target.kind), "good");
-      await wait(700);
-      nextLevel();
-      return;
-    }
-    if (result === "fail") {
-      setStatus(state.message, "bad");
-      running = false;
-      ui.run.disabled = false;
-      return;
-    }
-    await wait(320);
+
+  for (const item of state.items) {
+    if (item.dead) continue;
+    item.x -= speed * dt;
+    item.y = laneY(item.lane);
+    if (item.x < 145 && item.lane === state.lane) hurt(item);
+    else if (item.x < 40) item.dead = true;
   }
-  if (!state.smashed) {
-    setStatus("Program bitti, hedef hâlâ ayakta. Yeniden diz.", "bad");
+  state.items = state.items.filter((item) => !item.dead && item.x > -40);
+
+  for (const bit of state.bits) {
+    bit.vy += 820 * dt;
+    bit.x += bit.vx * dt;
+    bit.y += bit.vy * dt;
+    bit.rot += bit.vr * dt;
+    bit.life -= dt;
   }
-  running = false;
-  ui.run.disabled = false;
-}
+  state.bits = state.bits.filter((bit) => bit.life > 0);
 
-function nextLevel() {
-  levelIndex += 1;
-  running = false;
-  ui.run.disabled = false;
-  if (levelIndex >= LEVELS.length) {
-    show("win");
-    return;
+  for (const p of state.pops) {
+    p.y -= 50 * dt;
+    p.life -= dt;
   }
-  loadLevel();
+  state.pops = state.pops.filter((p) => p.life > 0);
+
+  state.shake *= 0.86;
+  state.flash *= 0.9;
 }
 
-function draw(state) {
-  ui.board.innerHTML = "";
-  for (let y = 0; y < ROWS; y += 1) {
-    for (let x = 0; x < COLS; x += 1) {
-      const cell = document.createElement("div");
-      cell.className = "cell";
-      if (isWall(state, x, y)) cell.classList.add("wall");
-      if (state.robot.x === x && state.robot.y === y) {
-        const robot = document.createElement("div");
-        robot.className = `robot dir-${state.robot.dir}`;
-        robot.innerHTML = '<i class="arm"></i><i class="visor"></i>';
-        cell.appendChild(robot);
-      }
-      if (isTarget(state, x, y)) {
-        const target = document.createElement("div");
-        target.className = `target ${state.target.kind}${state.smashed ? " smashed" : ""}`;
-        target.textContent = state.smashed ? "ÖLDÜ" : state.target.label;
-        cell.appendChild(target);
-      }
-      ui.board.appendChild(cell);
-    }
+function draw() {
+  const w = canvas.width;
+  const h = canvas.height;
+  ctx.save();
+  if (state.shake > 0.4) {
+    ctx.translate((Math.random() - 0.5) * state.shake, (Math.random() - 0.5) * state.shake);
   }
+  ctx.fillStyle = "#171910";
+  ctx.fillRect(0, 0, w, h);
+
+  for (let lane = 0; lane < LANES; lane += 1) {
+    const y = laneY(lane);
+    ctx.fillStyle = lane === state.lane ? "#2a2f1c" : "#1b1e14";
+    ctx.fillRect(0, y - 56, w, 112);
+    ctx.fillStyle = lane === state.lane ? "#f0d33a" : "#2c3124";
+    ctx.fillRect(0, y + 50, w, lane === state.lane ? 5 : 3);
+  }
+
+  ctx.fillStyle = "#f0d33a";
+  ctx.fillRect(0, 0, 14, h);
+
+  drawRobot();
+
+  for (const item of state.items) {
+    if (item.dead) continue;
+    drawJunk(item);
+  }
+  for (const bit of state.bits) drawBit(bit);
+  for (const p of state.pops) {
+    ctx.globalAlpha = Math.max(0, p.life);
+    ctx.fillStyle = "#f0d33a";
+    ctx.font = "700 22px monospace";
+    ctx.fillText(p.text, p.x, p.y);
+    ctx.globalAlpha = 1;
+  }
+
+  if (state.flash > 0.02) {
+    ctx.fillStyle = `rgba(240, 211, 58, ${state.flash * 0.25})`;
+    ctx.fillRect(0, 0, w, h);
+  }
+  ctx.restore();
 }
 
-function inside(x, y) {
-  return x >= 0 && y >= 0 && x < COLS && y < ROWS;
+function drawRobot() {
+  const y = laneY(state.lane);
+  const punching = state.elapsed < state.punchUntil;
+  const arm = punching ? 176 : 52;
+  ctx.fillStyle = "rgba(0,0,0,0.4)";
+  ctx.fillRect(48, y + 50, 100, 12);
+  ctx.fillStyle = "#16180f";
+  ctx.fillRect(86, y - 78, 10, 22);
+  ctx.fillStyle = "#f0d33a";
+  ctx.fillRect(36, y - 62, 108, 122);
+  ctx.fillStyle = "#16180f";
+  ctx.fillRect(52, y - 34, 76, 22);
+  ctx.fillStyle = "#f0d33a";
+  ctx.fillRect(60, y - 26, 12, 8);
+  ctx.fillRect(108, y - 26, 12, 8);
+  ctx.fillStyle = "#d24a22";
+  ctx.fillRect(138, y - 12, arm, 22);
+  ctx.fillRect(132 + arm, y - 26, 42, 50);
+  if (punching) {
+    ctx.fillStyle = "rgba(210, 74, 34, 0.35)";
+    ctx.fillRect(132 + arm + 42, y - 18, 70, 34);
+  }
+  ctx.fillStyle = "#16180f";
+  ctx.fillRect(58, y + 28, 22, 10);
+  ctx.fillRect(98, y + 28, 22, 10);
 }
 
-function isWall(state, x, y) {
-  return state.walls.some((w) => w.x === x && w.y === y);
+function drawJunk(item) {
+  ctx.fillStyle = item.kind.color;
+  ctx.fillRect(item.x, item.y - 34, 108, 68);
+  ctx.fillStyle = "#16180f";
+  ctx.fillRect(item.x + 8, item.y - 22, 28, 12);
+  ctx.font = "700 18px monospace";
+  ctx.fillText(item.kind.label, item.x + 12, item.y + 16);
 }
 
-function isTarget(state, x, y) {
-  return state.target.x === x && state.target.y === y;
+function drawBit(bit) {
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, bit.life);
+  ctx.translate(bit.x, bit.y);
+  ctx.rotate(bit.rot);
+  ctx.fillStyle = bit.color;
+  ctx.fillRect(-bit.w / 2, -bit.h / 2, bit.w, bit.h);
+  ctx.restore();
 }
 
-function fail(state, message) {
-  state.over = true;
-  state.message = message;
-  return "fail";
+function paintHud() {
+  hud.score.textContent = String(state.score);
+  hud.combo.textContent = `x${state.combo}`;
+  hud.lives.textContent = "■".repeat(Math.max(0, state.lives)).padEnd(3, "□");
 }
 
-function setStatus(text, kind) {
-  ui.status.textContent = text;
-  ui.status.className = `status${kind ? ` ${kind}` : ""}`;
+function flashStamp() {
+  stamp.classList.remove("hidden");
+  clearTimeout(flashStamp.t);
+  flashStamp.t = setTimeout(() => stamp.classList.add("hidden"), 220);
 }
 
-function winLine(kind) {
-  const lines = {
-    toast: "Tost dağıldı. Sabah kahvaltısı iptal.",
-    printer: "Yazıcı artık evrak basamaz. Adalet yerini buldu.",
-    plant: "Bitki devrildi. Fotosentez durdu.",
-    coffee: "Kahve makinesi çöktü. Ofis uyandı, sonra üzüldü.",
-    micro: "Mikrodalga sustu. Patlamış mısır özgür.",
-    copier: "Kopya bitti. Asıl evrak senin yumruğun.",
-  };
-  return lines[kind] || "ÇAK. Hedef yok.";
+function loop(now) {
+  const dt = Math.min(0.033, (now - (state.last || now)) / 1000);
+  state.last = now;
+  step(dt);
+  draw();
+  requestAnimationFrame(loop);
 }
 
-function wait(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function stamp() {
-  ui.stamp.classList.remove("hidden");
-  ui.board.classList.remove("shake");
-  void ui.board.offsetWidth;
-  ui.board.classList.add("shake");
-  setTimeout(() => ui.stamp.classList.add("hidden"), 280);
+function shift(dir) {
+  if (state.mode !== "play") return;
+  state.lane = Math.max(0, Math.min(LANES - 1, state.lane + dir));
 }
 
 function unlockAudio() {
@@ -395,7 +342,7 @@ function tone(freq, time, type) {
   const gain = audio.createGain();
   osc.type = type;
   osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0.05, audio.currentTime);
+  gain.gain.setValueAtTime(0.07, audio.currentTime);
   gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + time);
   osc.connect(gain);
   gain.connect(audio.destination);
@@ -403,19 +350,52 @@ function tone(freq, time, type) {
   osc.stop(audio.currentTime + time);
 }
 
-function thud() {
-  if (!audio) return;
-  const osc = audio.createOscillator();
-  const gain = audio.createGain();
-  osc.type = "triangle";
-  osc.frequency.setValueAtTime(90, audio.currentTime);
-  osc.frequency.exponentialRampToValueAtTime(40, audio.currentTime + 0.16);
-  gain.gain.setValueAtTime(0.18, audio.currentTime);
-  gain.gain.exponentialRampToValueAtTime(0.001, audio.currentTime + 0.16);
-  osc.connect(gain);
-  gain.connect(audio.destination);
-  osc.start();
-  osc.stop(audio.currentTime + 0.18);
+function thud(freq, time) {
+  tone(freq, time, "triangle");
 }
 
-boot();
+function crunch() {
+  tone(180, 0.05, "square");
+  setTimeout(() => tone(90, 0.1, "triangle"), 40);
+}
+
+document.getElementById("start-btn").addEventListener("click", start);
+document.getElementById("cak-btn").addEventListener("click", punch);
+document.getElementById("up-btn").addEventListener("click", () => shift(-1));
+document.getElementById("down-btn").addEventListener("click", () => shift(1));
+
+window.addEventListener("keydown", (event) => {
+  if (event.repeat) return;
+  if (event.code === "Space" || event.key === " ") {
+    event.preventDefault();
+    punch();
+  }
+  if (event.key === "w" || event.key === "W" || event.key === "ArrowUp") shift(-1);
+  if (event.key === "s" || event.key === "S" || event.key === "ArrowDown") shift(1);
+});
+
+canvas.addEventListener("pointerdown", punch);
+
+window.__cak = {
+  start,
+  punch,
+  shift,
+  spawnAt(lane, x = 240) {
+    const kind = JUNK[0];
+    state.items.push({ kind, lane, x, y: laneY(lane), dead: false });
+  },
+  get snapshot() {
+    return {
+      mode: state.mode,
+      score: state.score,
+      lives: state.lives,
+      combo: state.combo,
+      lane: state.lane,
+      items: state.items.length,
+      bits: state.bits.length,
+    };
+  },
+};
+
+paintHud();
+requestAnimationFrame(loop);
